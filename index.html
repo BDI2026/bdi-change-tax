@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Change Tax Calculator · BDI</title>
+<style>
+  :root {
+    --olive: #707554;
+    --olive-deep: #565a40;
+    --taupe: #908478;
+    --taupe-soft: #b5ac9f;
+    --gold: #eadbb2;
+    --gold-warm: #d8c48a;
+    --paper: #faf8f3;
+    --paper-warm: #f3efe6;
+    --ink: #3a3a32;
+    --ink-soft: #6a6759;
+    --line: #e3ddd0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    background:
+      radial-gradient(120% 80% at 80% -10%, rgba(234,219,178,0.35), transparent 55%),
+      var(--paper);
+    color: var(--ink);
+    line-height: 1.55;
+    min-height: 100vh;
+    padding: clamp(20px, 5vw, 64px) clamp(16px, 4vw, 48px);
+    display: flex;
+    justify-content: center;
+  }
+
+  .wrap { width: 100%; max-width: 760px; }
+
+  .eyebrow {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--olive);
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-size: clamp(34px, 6vw, 56px);
+    line-height: 1.02;
+    font-weight: normal;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
+  h1 .em { font-style: italic; color: var(--olive); }
+
+  .lede {
+    font-size: clamp(16px, 2.4vw, 19px);
+    color: var(--ink-soft);
+    max-width: 54ch;
+    margin-bottom: 40px;
+  }
+
+  .card {
+    background: var(--paper-warm);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: clamp(22px, 4vw, 38px);
+  }
+
+  .field { margin-bottom: 30px; }
+  .field:last-of-type { margin-bottom: 8px; }
+
+  .field-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+
+  .field label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+
+  .field .hint {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+
+  .readout {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--olive);
+    white-space: nowrap;
+  }
+
+  /* Range sliders */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--taupe-soft);
+    border-radius: 2px;
+    outline: none;
+    margin: 6px 0 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--olive);
+    border: 3px solid var(--paper);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.08); background: var(--olive-deep); }
+  input[type="range"]::-moz-range-thumb {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--olive);
+    border: 3px solid var(--paper);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    cursor: pointer;
+  }
+
+  /* Segmented band pickers */
+  .segs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .seg {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    text-align: center;
+    padding: 13px 8px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink-soft);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.3;
+  }
+  .seg small {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--taupe);
+    margin-top: 3px;
+  }
+  .seg:hover { border-color: var(--taupe); }
+  .seg.active {
+    background: var(--olive);
+    border-color: var(--olive);
+    color: var(--paper);
+  }
+  .seg.active small { color: var(--gold); }
+
+  .divider { height: 1px; background: var(--line); margin: 6px 0 30px; }
+
+  .scale-note {
+    font-size: 13px;
+    color: var(--olive);
+    font-style: italic;
+    margin-top: 12px;
+    line-height: 1.5;
+    min-height: 0;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.35s ease, max-height 0.35s ease, margin-top 0.35s ease;
+  }
+  .scale-note.show { opacity: 1; max-height: 80px; margin-top: 12px; }
+
+  /* Result */
+  .result {
+    margin-top: 28px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .result.show { opacity: 1; transform: translateY(0); }
+
+  .result-band {
+    padding: 7px 38px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--paper);
+    transition: background 0.4s ease;
+  }
+  .result-body {
+    background: var(--paper);
+    padding: clamp(22px, 4vw, 36px);
+  }
+  .result-label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+  .result-figure {
+    font-size: clamp(38px, 8vw, 62px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .result-range-note {
+    font-size: 14px;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-bottom: 26px;
+  }
+
+  .cost-rows { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 2px; }
+  .cost-row {
+    background: var(--paper-warm);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .cost-row .cr-label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .cost-row .cr-label small {
+    display: block;
+    font-weight: 400;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    margin-top: 2px;
+    max-width: 34ch;
+  }
+  .cost-row .cr-val {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--olive);
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .human {
+    margin-top: 26px;
+    padding: 22px 24px;
+    background: var(--paper-warm);
+    border-left: 3px solid var(--gold-warm);
+    border-radius: 2px;
+  }
+  .human .h-label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--taupe);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .human p { font-size: 16px; color: var(--ink); }
+
+  .foot {
+    margin-top: 22px;
+    font-size: 13px;
+    color: var(--taupe);
+    line-height: 1.5;
+  }
+
+  .brandline {
+    margin-top: 40px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brandline .bl-name {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .brandline .bl-tag { font-size: 14px; color: var(--taupe); font-style: italic; }
+
+  @media (max-width: 520px) {
+    .seg { font-size: 12.5px; padding: 11px 5px; }
+    .cost-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .cost-row .cr-val { text-align: left; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">The People Performance Lab · Session 03</div>
+  <h1>The Change Tax <span class="em">Calculator</span></h1>
+  <p class="lede">Every organization pays a tax on change it doesn't manage well. It rarely shows up as a line item, so most leaders never see the bill. Move the four dials below to estimate what yours is quietly costing.</p>
+
+  <div class="card">
+    <!-- Initiatives -->
+    <div class="field">
+      <div class="field-head">
+        <label for="inits">Active or recent change initiatives</label>
+        <span class="readout" id="initsOut">3</span>
+      </div>
+      <p class="hint">Restructures, system rollouts, mergers, new ways of working, anything that asked people to operate differently in the last 18 months.</p>
+      <input type="range" id="inits" min="1" max="12" value="3" step="1">
+    </div>
+
+    <!-- Headcount -->
+    <div class="field">
+      <div class="field-head">
+        <label for="people">People affected</label>
+        <span class="readout" id="peopleOut">250</span>
+      </div>
+      <p class="hint">Roughly how many employees these changes touched.</p>
+      <input type="range" id="people" min="25" max="2500" value="250" step="25">
+      <p class="scale-note" id="scaleNote"></p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Change Readiness band -->
+    <div class="field">
+      <div class="field-head">
+        <label>Change readiness</label>
+      </div>
+      <p class="hint">How prepared your people are to absorb change before it arrives.</p>
+      <div class="segs" data-group="readiness">
+        <div class="seg" data-val="high">Strong<small>built capacity</small></div>
+        <div class="seg active" data-val="mid">Mixed<small>uneven</small></div>
+        <div class="seg" data-val="low">Stretched<small>running on fumes</small></div>
+      </div>
+    </div>
+
+    <!-- Adaptability Velocity band -->
+    <div class="field">
+      <div class="field-head">
+        <label>Adaptability velocity</label>
+      </div>
+      <p class="hint">How quickly change actually takes hold once it starts. Not the plan, the reality.</p>
+      <div class="segs" data-group="velocity">
+        <div class="seg" data-val="high">Fast<small>moves cleanly</small></div>
+        <div class="seg active" data-val="mid">Sluggish<small>drags, then lands</small></div>
+        <div class="seg" data-val="low">Stalled<small>initiatives stall out</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result" id="result">
+    <div class="result-band" id="resultBand">Estimated annual change tax</div>
+    <div class="result-body">
+      <div class="result-label">Estimated annual change tax</div>
+      <div class="result-figure" id="figure">$0</div>
+      <div class="result-range-note" id="rangeNote">A working estimate, not an invoice.</div>
+
+      <div class="cost-rows">
+        <div class="cost-row">
+          <div class="cr-label">Slow & failed change<small>Value that leaks while initiatives stall or fall short.</small></div>
+          <div class="cr-val" id="costDollars">$0</div>
+        </div>
+        <div class="cost-row">
+          <div class="cr-label">Disengagement<small>Effort quietly withdrawn when change is handled badly.</small></div>
+          <div class="cr-val" id="costDisengage">$0</div>
+        </div>
+        <div class="cost-row">
+          <div class="cr-label">Change fatigue<small>The compounding cost of each change making the next one harder.</small></div>
+          <div class="cr-val" id="costFatigue">$0</div>
+        </div>
+      </div>
+
+      <div class="human">
+        <div class="h-label">The part that isn't dollars</div>
+        <p id="humanLine"></p>
+      </div>
+
+      <p class="foot">This estimate uses conservative, widely cited ranges for disengagement and change failure applied to your inputs. It's built to make an invisible cost visible and start a conversation, not to produce a number for the board deck.</p>
+    </div>
+  </div>
+
+  <div class="brandline">
+    <span class="bl-name">BDI · The People Company</span>
+    <span class="bl-tag">Invisible until you measure it.</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  // --- State ---
+  var state = {
+    inits: 3,
+    people: 250,
+    readiness: 'mid',
+    velocity: 'mid'
+  };
+
+  // Multipliers: how each band scales cost. Higher = worse.
+  var readinessFactor = { high: 0.55, mid: 1.0, low: 1.6 };
+  var velocityFactor  = { high: 0.55, mid: 1.0, low: 1.7 };
+
+  // Assumptions (deliberately conservative, expressed as ranges via +/-)
+  var AVG_LOADED_SALARY = 85000;   // blended loaded cost per affected person
+  var DISENGAGE_BASE = 0.04;       // share of payroll lost to disengagement at "mixed"
+  var INITIATIVE_VALUE = 0.012;    // value-at-risk per initiative as share of affected payroll
+  var FATIGUE_PER_INIT = 0.006;    // compounding fatigue drag per initiative beyond the first
+
+  var fmt = function (n) {
+    if (n >= 1000000) return '$' + (n / 1000000).toFixed(n >= 10000000 ? 0 : 1) + 'M';
+    if (n >= 1000) return '$' + Math.round(n / 1000) + 'K';
+    return '$' + Math.round(n);
+  };
+
+  function compute() {
+    var payroll = state.people * AVG_LOADED_SALARY;
+    var rf = readinessFactor[state.readiness];
+    var vf = velocityFactor[state.velocity];
+
+    // Slow & failed change: value at risk across initiatives, worsened by slow velocity
+    var dollars = payroll * INITIATIVE_VALUE * state.inits * vf;
+
+    // Disengagement: share of payroll, worsened by weak readiness
+    var disengage = payroll * DISENGAGE_BASE * rf;
+
+    // Change fatigue: compounds with number of initiatives and weak readiness+velocity
+    var extraInits = Math.max(0, state.inits - 1);
+    var fatigue = payroll * FATIGUE_PER_INIT * extraInits * ((rf + vf) / 2);
+
+    var total = dollars + disengage + fatigue;
+    return { total: total, dollars: dollars, disengage: disengage, fatigue: fatigue, rf: rf, vf: vf };
+  }
+
+  function bandFor(total, people) {
+    // Express the result as a band relative to organization size so it reads fairly
+    var perHead = total / Math.max(people, 1);
+    if (perHead < 5500) return 0;       // contained
+    if (perHead < 11000) return 1;      // accumulating
+    return 2;                            // compounding
+  }
+
+  var bandMeta = [
+    {
+      key: 'Contained',
+      color: '#707554',
+      note: 'A working estimate. Your tax looks contained, but it rarely stays that way without attention.',
+      human: 'At this level the cost is real but quiet. The risk is complacency: change readiness erodes fastest when no one is watching it.'
+    },
+    {
+      key: 'Accumulating',
+      color: '#a08a4e',
+      note: 'A working estimate. This is the band where the tax starts to show up in results.',
+      human: 'People are absorbing more than they\u2019re saying. The early signs are slower buy-in, quieter meetings, and your best people picking up the slack until they don\u2019t.'
+    },
+    {
+      key: 'Compounding',
+      color: '#8a5a3c',
+      note: 'A working estimate. At this band each new change is paid for by the last one.',
+      human: 'This is change fatigue with a number on it. The tax isn\u2019t any single initiative. It\u2019s the cumulative weight of change handled without the human capacity to carry it.'
+    }
+  ];
+
+  function render() {
+    var r = compute();
+    var b = bandFor(r.total, state.people);
+    var meta = bandMeta[b];
+
+    // total shown as a +/- 20% range feel via the figure + note
+    document.getElementById('figure').textContent = fmt(r.total);
+    document.getElementById('costDollars').textContent = fmt(r.dollars);
+    document.getElementById('costDisengage').textContent = fmt(r.disengage);
+    document.getElementById('costFatigue').textContent = fmt(r.fatigue);
+
+    var lo = fmt(r.total * 0.8), hi = fmt(r.total * 1.2);
+    document.getElementById('rangeNote').textContent = 'Plausible range ' + lo + '\u2013' + hi + ' per year. A working estimate, not an invoice.';
+
+    var bandEl = document.getElementById('resultBand');
+    bandEl.textContent = meta.key + ' \u00b7 estimated annual change tax';
+    bandEl.style.background = meta.color;
+    document.querySelector('.human').style.borderLeftColor = meta.color;
+    document.getElementById('humanLine').textContent = meta.human;
+
+    document.getElementById('result').classList.add('show');
+  }
+
+  // --- Wire sliders ---
+  var inits = document.getElementById('inits');
+  var people = document.getElementById('people');
+  inits.addEventListener('input', function () {
+    state.inits = +this.value;
+    document.getElementById('initsOut').textContent = this.value;
+    render();
+  });
+  people.addEventListener('input', function () {
+    state.people = +this.value;
+    document.getElementById('peopleOut').textContent = (+this.value).toLocaleString();
+    var sn = document.getElementById('scaleNote');
+    if (+this.value >= 2500) {
+      sn.textContent = 'Capped at 2,500 for this session. Past this point the tax doesn\u2019t add, it multiplies. In organizations of several thousand, the same readiness and velocity gaps compound across more teams, more handoffs, and more layers, and the annual figure climbs well into eight digits.';
+      sn.classList.add('show');
+    } else {
+      sn.classList.remove('show');
+    }
+    render();
+  });
+
+  // --- Wire segmented pickers ---
+  document.querySelectorAll('.segs').forEach(function (grp) {
+    var group = grp.getAttribute('data-group');
+    grp.querySelectorAll('.seg').forEach(function (seg) {
+      seg.addEventListener('click', function () {
+        grp.querySelectorAll('.seg').forEach(function (s) { s.classList.remove('active'); });
+        seg.classList.add('active');
+        state[group] = seg.getAttribute('data-val');
+        render();
+      });
+    });
+  });
+
+  // Initial render
+  document.getElementById('peopleOut').textContent = state.people.toLocaleString();
+  render();
+})();
+</script>
+</body>
+</html>
